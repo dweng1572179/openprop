@@ -8,9 +8,10 @@ from .db import get_conn
 # (name, label, kind) — kind: "secret" | "text" | "int" | "select:a,b,c"
 FIELDS = [
     ("property_provider", "Primary property provider", "select:rentcast,regrid,reapi"),
-    ("skiptrace_provider", "Skip-trace vendor", "select:,batchdata,reapi"),
+    ("skiptrace_provider", "Skip-trace vendor", "select:,batchdata,apify,reapi"),
+    ("apify_actor", "Apify actor (only when vendor = apify)", "text"),
     ("rentcast_api_key", "RentCast API key", "secret"),
-    ("skiptrace_api_key", "Skip-trace API key", "secret"),
+    ("skiptrace_api_key", "Skip-trace API key (Apify: your API token)", "secret"),
     ("reapi_api_key", "RealEstateAPI key (distress unlock)", "secret"),
     ("regrid_api_token", "Regrid API token (parcel map)", "secret"),
     ("hud_fmr_token", "HUD FMR token", "secret"),

@@ -7,3 +7,7 @@ openprop.db
 openprop.db-*
 *.db
 .DS_Store
+
+# never commit a real env; .env alone does not match .env.bak/.env.local
+.env.*
+!.env.example

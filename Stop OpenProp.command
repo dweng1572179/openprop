@@ -1,4 +1,3 @@
 #!/bin/bash
-cd "$(dirname "$0")" || exit 1
-docker compose down
+pkill -f "uvicorn app.app:app"
 echo "OpenProp stopped. You can close this window."
