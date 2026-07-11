@@ -55,8 +55,18 @@ def matches(rec: PropertyRecord, f: SearchFilters) -> bool:
     return True
 
 
+def _completeness(rec: PropertyRecord) -> int:
+    """How usable a row is as a lead. A coarse area listing mixes full assessor
+    records with unit-level rows carrying nothing but an address (RentCast zip
+    90007: only 73 of 500 rows have an owner). Truncating an unranked list at
+    f.limit buries the usable ones, so rank before we cut."""
+    return sum(bool(getattr(rec, k)) for k in
+               ("owner_name", "assessed_value", "market_value", "year_built"))
+
+
 def apply_filters(records: list[PropertyRecord], f: SearchFilters) -> list[PropertyRecord]:
     out = [r for r in records if matches(r, f)]
+    out.sort(key=_completeness, reverse=True)  # stable: ties keep provider order
     return out[: f.limit]
 
 
@@ -83,8 +93,11 @@ def demo() -> None:
     # explicit absentee=False selects only the owner-occupied one
     assert [r.address for r in apply_filters(recs, SearchFilters(absentee=False))] == ["2 B"]
 
-    # limit truncates
+    # limit truncates — and keeps the rows with data over the empty ones
     assert len(apply_filters(recs, SearchFilters(limit=2))) == 2
+    thin = [PropertyRecord(address=f"empty {i}") for i in range(5)]
+    rich = PropertyRecord(address="rich", owner_name="A Owner", assessed_value=100_000)
+    assert [r.address for r in apply_filters(thin + [rich], SearchFilters(limit=1))] == ["rich"]
     print("filter_engine.demo OK")
 
 

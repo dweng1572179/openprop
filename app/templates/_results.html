@@ -28,7 +28,13 @@
       <tr class="border-t">
         <td class="px-3 py-2">{{ r.address }}<span class="text-slate-400 block text-xs">{{ [r.city, r.state, r.zip]|select|join(', ') }}</span></td>
         <td class="px-3 py-2">{{ r.owner_name or '—' }}</td>
-        <td class="px-3 py-2 text-right">{% if r.market_value %}${{ '{:,}'.format(r.market_value) }}{% else %}—{% endif %}</td>
+        {# a coarse area search never carries market value (that's a per-address AVM call);
+           fall back to the assessed value the same free listing already gave us. #}
+        <td class="px-3 py-2 text-right">
+          {% if r.market_value %}${{ '{:,}'.format(r.market_value) }}
+          {% elif r.assessed_value %}<span title="assessed value">${{ '{:,}'.format(r.assessed_value) }}<span class="text-xs text-slate-400"> asr</span></span>
+          {% else %}—{% endif %}
+        </td>
         <td class="px-3 py-2">
           {% for k, lab in [('absentee','ABS'),('out_of_state','OOS'),('corporate_owned','CORP'),('high_equity','EQ'),('vacant','VAC'),('pre_foreclosure','PRE-FC')] %}
             {% if r[k] %}<span class="text-xs bg-slate-100 rounded px-1">{{ lab }}</span>{% endif %}
