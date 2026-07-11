@@ -1,0 +1,99 @@
+{# Property detail card (HTMX partial). Renders only known fields; unknowns show —.
+   Flag badges appear only when the flag is True. #}
+{% macro row(label, value) %}
+  <div class="flex justify-between py-1 border-b border-slate-100 last:border-0">
+    <dt class="text-slate-500">{{ label }}</dt>
+    <dd class="font-medium text-right">{% if value is not none and value != '' %}{{ value }}{% else %}<span class="text-slate-300">—</span>{% endif %}</dd>
+  </div>
+{% endmacro %}
+{% macro money(v) %}{% if v is not none %}${{ '{:,}'.format(v) }}{% endif %}{% endmacro %}
+
+{% set flags = [
+  ('absentee','Absentee','bg-amber-100 text-amber-800'),
+  ('out_of_state','Out-of-state','bg-amber-100 text-amber-800'),
+  ('corporate_owned','Corporate','bg-slate-200 text-slate-700'),
+  ('high_equity','High equity','bg-emerald-100 text-emerald-800'),
+  ('vacant','Vacant','bg-rose-100 text-rose-800'),
+  ('tax_delinquent','Tax delinquent','bg-rose-100 text-rose-800'),
+  ('pre_foreclosure','Pre-foreclosure','bg-red-100 text-red-800'),
+  ('foreclosure','Foreclosure','bg-red-100 text-red-800'),
+  ('auction','Auction','bg-red-100 text-red-800'),
+  ('lien','Lien','bg-red-100 text-red-800'),
+  ('probate','Probate','bg-purple-100 text-purple-800'),
+] %}
+
+<div class="rounded-xl border bg-white shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b bg-slate-50">
+    <h2 class="text-lg font-semibold">{{ p.address }}</h2>
+    <p class="text-sm text-slate-500">
+      {{ [p.city, p.state, p.zip]|select|join(', ') }}
+      {% if p.source %}· <span class="text-slate-400">source: {{ p.source }}</span>{% endif %}
+    </p>
+    <div class="mt-2 flex flex-wrap gap-1.5">
+      {% for key, label, cls in flags %}{% if p[key] %}
+        <span class="text-xs px-2 py-0.5 rounded-full {{ cls }}">{{ label }}</span>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-x-8 gap-y-4 px-5 py-4 text-sm">
+    <dl>
+      <h3 class="font-semibold text-slate-700 mb-1">Owner</h3>
+      {{ row('Name', p.owner_name) }}
+      {{ row('Mailing', p.owner_mailing_addr) }}
+      {{ row('Owner-occupied', p.owner_occupied) }}
+      {{ row('Years owned', p.years_owned) }}
+      {% if p.id %}
+      <div class="mt-2 flex gap-2">
+        <button hx-get="/property/{{ p.id }}/skiptrace/confirm" hx-target="#skiptrace-box-{{ p.id }}"
+                class="rounded bg-amber-600 px-3 py-1 text-white text-xs hover:bg-amber-700">Fetch contact info</button>
+        <button hx-get="/property/{{ p.id }}/portfolio" hx-target="#portfolio-box-{{ p.id }}"
+                class="rounded border px-3 py-1 text-xs hover:bg-slate-50">Linked properties</button>
+      </div>
+      <div id="skiptrace-box-{{ p.id }}" class="mt-2"></div>
+      <div id="portfolio-box-{{ p.id }}" class="mt-2"></div>
+      {% endif %}
+    </dl>
+    <dl>
+      <h3 class="font-semibold text-slate-700 mb-1">Valuation &amp; tax</h3>
+      {{ row('Market value', money(p.market_value)) }}
+      {{ row('Est. equity', money(p.est_equity)) }}
+      {{ row('Equity %', (p.equity_pct ~ '%') if p.equity_pct is not none else none) }}
+      {{ row('Assessed', money(p.assessed_value)) }}
+      {{ row('Tax amount', money(p.tax_amount)) }}
+    </dl>
+    <dl>
+      <h3 class="font-semibold text-slate-700 mb-1">Property</h3>
+      {{ row('Type', p.property_type) }}
+      {{ row('Year built', p.year_built) }}
+      {{ row('Beds / baths', (p.beds ~ ' / ' ~ p.baths) if p.beds is not none else none) }}
+      {{ row('Building sqft', '{:,}'.format(p.building_sqft) if p.building_sqft else none) }}
+      {{ row('APN', p.apn) }}
+    </dl>
+    <dl>
+      <h3 class="font-semibold text-slate-700 mb-1">Market &amp; area</h3>
+      {{ row('Rent estimate', (money(p.rent_estimate) ~ '/mo') if p.rent_estimate else none) }}
+      {{ row('Flood zone', p.flood_zone) }}
+      {{ row('Median income', money(p.median_income)) }}
+      {{ row('FMR (2BR)', (money(p.fmr_by_bed.get('2')) ~ '/mo') if p.fmr_by_bed and p.fmr_by_bed.get('2') else none) }}
+    </dl>
+  </div>
+
+  {% if p.id %}
+  <div class="px-5 py-4 border-t">
+    <div class="flex gap-2 mb-2">
+      <button hx-post="/ai/brief/{{ p.id }}" hx-target="#ai-box-{{ p.id }}"
+              class="rounded bg-indigo-600 px-3 py-1 text-white text-xs hover:bg-indigo-700">AI brief</button>
+      <button hx-post="/ai/score/{{ p.id }}" hx-target="#ai-box-{{ p.id }}"
+              class="rounded bg-indigo-600 px-3 py-1 text-white text-xs hover:bg-indigo-700">Lead score</button>
+      <button hx-post="/ai/outreach/{{ p.id }}" hx-target="#ai-box-{{ p.id }}"
+              class="rounded border border-indigo-300 text-indigo-700 px-3 py-1 text-xs hover:bg-indigo-50">Outreach draft</button>
+    </div>
+    <div id="ai-box-{{ p.id }}"></div>
+  </div>
+  <div class="px-5 py-4 border-t bg-slate-50">
+    <h3 class="font-semibold text-slate-700 mb-2 text-sm">Notes</h3>
+    <div hx-get="/property/{{ p.id }}/notes" hx-trigger="load"></div>
+  </div>
+  {% endif %}
+</div>

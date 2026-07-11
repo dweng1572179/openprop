@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}OpenProp — list builder{% endblock %}
+{% block content %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+<div class="flex items-center justify-between mb-3">
+  <h1 class="text-2xl font-semibold tracking-tight">List builder</h1>
+  <a href="/" class="text-sm text-emerald-600 hover:underline">← single lookup</a>
+</div>
+
+<form hx-post="/ai/parse" hx-target="#results" hx-indicator="#spin" class="flex gap-2 mb-4">
+  <input name="query" placeholder='AI search — e.g. "vacant absentee SFRs in TX with 50%+ equity under $400k"'
+         class="flex-1 rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+  <button class="rounded-lg bg-indigo-600 px-4 py-2 text-white font-medium hover:bg-indigo-700">AI search</button>
+</form>
+
+<div class="grid lg:grid-cols-[280px_1fr] gap-4">
+  <!-- filter rail -->
+  <form id="filter-form" hx-post="/search" hx-target="#results" hx-indicator="#spin"
+        class="space-y-2 text-sm bg-white border rounded-xl p-3 h-max">
+    <div class="grid grid-cols-2 gap-2">
+      <input name="city" placeholder="City" class="border rounded px-2 py-1">
+      <input name="state" placeholder="State" maxlength="2" class="border rounded px-2 py-1">
+    </div>
+    <input name="zip" placeholder="ZIP" class="border rounded px-2 py-1 w-full">
+    <input name="property_type" placeholder="Property type (e.g. Single Family)" class="border rounded px-2 py-1 w-full">
+    <div class="grid grid-cols-2 gap-2">
+      <input name="beds_min" type="number" placeholder="Beds min" class="border rounded px-2 py-1">
+      <input name="year_built_min" type="number" placeholder="Built after" class="border rounded px-2 py-1">
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <input name="value_min" type="number" placeholder="Value min" class="border rounded px-2 py-1">
+      <input name="value_max" type="number" placeholder="Value max" class="border rounded px-2 py-1">
+    </div>
+    <input name="equity_pct_min" type="number" placeholder="Equity % min" class="border rounded px-2 py-1 w-full">
+    {% for f, label in [('absentee','Absentee'),('out_of_state','Out-of-state'),('owner_occupied','Owner-occupied'),('corporate_owned','Corporate'),('vacant','Vacant'),('tax_delinquent','Tax delinquent'),('pre_foreclosure','Pre-foreclosure')] %}
+    <select name="{{ f }}" class="border rounded px-2 py-1 w-full text-slate-600">
+      <option value="">{{ label }}: any</option>
+      <option value="true">{{ label }}: yes</option>
+      <option value="false">{{ label }}: no</option>
+    </select>
+    {% endfor %}
+    <input name="limit" type="number" value="100" class="border rounded px-2 py-1 w-full" title="Max results">
+    <button class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-white font-medium hover:bg-emerald-700">Search</button>
+    <div class="flex gap-2 pt-1">
+      <button type="button" onclick="exportResults('csv')" class="flex-1 rounded border px-2 py-1 hover:bg-slate-50">Export CSV</button>
+      <button type="button" onclick="exportResults('xlsx')" class="flex-1 rounded border px-2 py-1 hover:bg-slate-50">Export XLSX</button>
+    </div>
+    <div class="flex gap-2 pt-1">
+      <input name="name" placeholder="Save as…" class="flex-1 border rounded px-2 py-1">
+      <button type="button" onclick="saveSearch()" class="rounded border px-3 py-1 hover:bg-slate-50">Save</button>
+    </div>
+  </form>
+
+  <!-- map + results -->
+  <div class="space-y-3">
+    <div id="map" class="w-full h-80 rounded-xl border"></div>
+    <div id="saved">{% include "_saved_searches.html" %}</div>
+    <div id="spin" class="htmx-indicator text-sm text-slate-400">Searching…</div>
+    <div id="results"></div>
+  </div>
+</div>
+
+<script>
+const PARCEL_TILES = {{ (parcel_tiles | tojson) if parcel_tiles else 'null' }};
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://demotiles.maplibre.org/style.json',   // free, no key; swap for MapTiler/OpenFreeMap
+  center: [-98.5, 39.8], zoom: 3,
+});
+map.on('load', () => {
+  map.addSource('results', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
+  map.addLayer({id: 'pins', type: 'circle', source: 'results',
+    paint: {'circle-radius': 5, 'circle-color': '#059669', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff'}});
+  if (PARCEL_TILES) {
+    map.addSource('parcels', {type: 'vector', tiles: [PARCEL_TILES], minzoom: 14});
+    map.addLayer({id: 'parcel-lines', type: 'line', source: 'parcels', 'source-layer': 'parcels',
+      minzoom: 14, paint: {'line-color': '#64748b', 'line-width': 0.7}});
+  }
+});
+function updateMap(geojson) {
+  const src = map.getSource('results');
+  if (!src) return;
+  src.setData(geojson);
+  const fs = geojson.features;
+  if (fs.length) {
+    const b = new maplibregl.LngLatBounds();
+    fs.forEach(f => b.extend(f.geometry.coordinates));
+    map.fitBounds(b, {padding: 40, maxZoom: 15});
+  }
+}
+// after each results swap, feed the embedded GeoJSON to the map
+document.body.addEventListener('htmx:afterSwap', e => {
+  if (e.target.id !== 'results') return;
+  const el = document.getElementById('results-geojson');
+  if (el) { try { updateMap(JSON.parse(el.textContent)); } catch (_) {} }
+});
+function exportResults(fmt) {
+  const fd = new FormData(document.getElementById('filter-form'));
+  fd.set('fmt', fmt);
+  fetch('/export', {method: 'POST', body: fd}).then(r => r.blob()).then(b => {
+    const url = URL.createObjectURL(b);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'openprop.' + fmt; a.click();
+    URL.revokeObjectURL(url);   // release the blob
+  });
+}
+function saveSearch() {
+  const fd = new FormData(document.getElementById('filter-form'));
+  fetch('/saved-searches', {method: 'POST', body: fd}).then(r => r.text()).then(h => {
+    const el = document.getElementById('saved');
+    el.innerHTML = h;
+    htmx.process(el);   // activate hx-* on the injected Run/Delete buttons
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{# Saved searches — resume or delete. #}
+{% if saved %}
+<div class="flex flex-wrap gap-2 text-sm">
+  <span class="text-slate-400 self-center">Saved:</span>
+  {% for s in saved %}
+  <span class="inline-flex items-center gap-1 border rounded-full pl-3 pr-1 py-0.5 bg-white">
+    <button hx-post="/saved-searches/{{ s.id }}/run" hx-target="#results" class="hover:underline">{{ s.name }}</button>
+    <button hx-delete="/saved-searches/{{ s.id }}" hx-target="#saved" hx-swap="innerHTML"
+            class="text-slate-300 hover:text-red-500 text-xs px-1">✕</button>
+  </span>
+  {% endfor %}
+</div>
+{% endif %}

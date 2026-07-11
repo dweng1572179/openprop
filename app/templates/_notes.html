@@ -1,0 +1,21 @@
+{# Notes panel (HTMX). Add form + list; each route re-renders this whole block. #}
+<div id="notes-{{ property_id }}">
+  <form hx-post="/property/{{ property_id }}/notes" hx-target="#notes-{{ property_id }}"
+        hx-swap="outerHTML" class="flex gap-2 mb-2">
+    <input name="body" placeholder="Add a note…" maxlength="5000"
+           class="flex-1 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500">
+    <button class="rounded bg-slate-700 px-3 py-1 text-white text-sm hover:bg-slate-900">Add</button>
+  </form>
+  <ul class="space-y-1">
+    {% for n in notes %}
+    <li class="flex items-start justify-between gap-2 text-sm border-b border-slate-100 py-1">
+      <div><span>{{ n.body }}</span>
+        <span class="text-slate-400 text-xs block">{{ n.created_at }}</span></div>
+      <button hx-delete="/note/{{ n.id }}" hx-target="#notes-{{ property_id }}" hx-swap="outerHTML"
+              class="text-slate-300 hover:text-red-500 text-xs shrink-0">✕</button>
+    </li>
+    {% else %}
+    <li class="text-sm text-slate-400">No notes yet.</li>
+    {% endfor %}
+  </ul>
+</div>

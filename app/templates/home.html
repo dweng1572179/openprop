@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mb-6 flex items-end justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Property lookup</h1>
+    <p class="text-sm text-slate-500">Address or APN → owner, value, distress flags, enrichment.</p>
+  </div>
+  <a href="/search" class="text-sm text-emerald-600 hover:underline">list builder →</a>
+</div>
+
+{% if not provider_ready %}
+<div class="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+  Lookups work on free geocoding + flood data now. Add your <b>RentCast API key</b> in
+  <a href="/settings" class="underline font-medium">Settings</a> to get owner, value, rent, and distress data.
+</div>
+{% endif %}
+
+<form hx-post="/lookup" hx-target="#result" hx-indicator="#spin"
+      class="flex gap-2 mb-6">
+  <input name="address" required autofocus
+         placeholder="1600 Pennsylvania Ave NW, Washington, DC 20500"
+         class="flex-1 rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+  <button class="rounded-lg bg-emerald-600 px-5 py-2 text-white font-medium hover:bg-emerald-700">
+    Look up
+  </button>
+</form>
+
+<div id="spin" class="htmx-indicator text-sm text-slate-400 mb-4">Searching…</div>
+<div id="result"></div>
+{% endblock %}

@@ -1,0 +1,9 @@
+<div class="rounded-lg border bg-indigo-50 border-indigo-200 px-3 py-2 text-sm">
+  <div class="flex items-center gap-2 mb-1">
+    <span class="text-indigo-700 font-semibold text-xs uppercase tracking-wide">Lead score</span>
+    <span class="text-lg font-bold text-indigo-700">{{ result.score }}</span><span class="text-slate-400">/100</span>
+  </div>
+  <ul class="list-disc list-inside text-slate-700">
+    {% for r in result.reasons %}<li>{{ r }}</li>{% endfor %}
+  </ul>
+</div>

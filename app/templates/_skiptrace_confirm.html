@@ -1,0 +1,20 @@
+{# Confirm-before-spend gate for skip trace (spec §8). #}
+<div id="skiptrace-{{ property_id }}">
+{% if existing %}
+  {% set contact = existing %}
+  {% include "_contact.html" %}
+{% elif not provider_ready %}
+  <p class="text-sm text-slate-400">Set <code>SKIPTRACE_PROVIDER</code> + key in <code>.env</code> to enable contact lookup.</p>
+{% else %}
+  <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
+    <p class="text-amber-800">Skip trace ≈ <b>${{ "%.2f"|format(cost_cents/100) }}</b>
+       · budget left this month: ${{ "%.2f"|format(remaining_cents/100) }}</p>
+    <button hx-post="/property/{{ property_id }}/skiptrace"
+            hx-target="#skiptrace-{{ property_id }}" hx-swap="outerHTML"
+            class="mt-2 rounded bg-amber-600 px-3 py-1 text-white text-sm hover:bg-amber-700">
+      Fetch contact info — spend ${{ "%.2f"|format(cost_cents/100) }}
+    </button>
+    <p class="mt-1 text-xs text-slate-500">Permissible-use only (DPPA/GLBA). Not for credit, employment, or insurance decisions.</p>
+  </div>
+{% endif %}
+</div>

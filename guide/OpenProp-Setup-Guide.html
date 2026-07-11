@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OpenProp — Set It Up Yourself</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root{
+  --ink:#16214c;        /* deep navy — dark sections */
+  --navy:#212c60;       /* brand navy (matches the logo) */
+  --blue:#3457c9;       /* accent — go / active / numbers */
+  --blue-soft:#e9eefb;
+  --cream:#f6f0e3;      /* off-white base */
+  --cream2:#eee6d3;     /* panel */
+  --slate:#565f79;      /* secondary text */
+  --line:#e6ddc9;       /* hairline */
+  --text:#17224a;       /* body/heading on cream */
+  --amber:#8f6412; --amber-soft:#f6ecd2;
+  --on-ink:#eef2fb; --on-ink-soft:#b7c2e0; --on-ink-mute:#8794b8;
+}
+*{ -webkit-print-color-adjust:exact; print-color-adjust:exact; box-sizing:border-box; }
+@page{ size:letter; margin:0; }
+html,body{ margin:0; padding:0; }
+body{ font-family:'Hanken Grotesk',system-ui,sans-serif; color:var(--text); background:var(--cream); font-size:11.5pt; line-height:1.5; -webkit-font-smoothing:antialiased; }
+h1,h2,h3,.display{ font-family:'Bricolage Grotesque',sans-serif; letter-spacing:-.01em; }
+.mono{ font-family:'JetBrains Mono',monospace; }
+p{ margin:0 0 9px; }
+strong{ font-weight:700; color:#0f1c3d; }
+em{ font-style:normal; background:var(--blue-soft); padding:0 3px; border-radius:3px; }
+
+/* ---------- logo / wordmark ---------- */
+.logo{ display:flex; align-items:center; gap:12px; }
+.logo img{ width:52px; height:52px; border-radius:13px; box-shadow:0 3px 12px rgba(10,46,110,.18); flex:none; }
+.logo .wm{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12pt; letter-spacing:.14em; text-transform:uppercase; color:var(--navy); }
+.logo.sm img{ width:34px; height:34px; border-radius:9px; }
+.logo.sm .wm{ font-size:9.5pt; }
+.logo.on-dark .wm{ color:var(--on-ink); }
+.logo.on-dark img{ box-shadow:0 0 0 1px rgba(255,255,255,.16), 0 3px 12px rgba(0,0,0,.3); }
+
+/* ---------- page scaffolding ---------- */
+.page{ padding:0.4in 0.85in; min-height:11in; position:relative; }
+.page.break{ break-before:page; }
+.full{ min-height:11in; break-after:page; display:flex; flex-direction:column; }
+.close-sheet{ min-height:11in; break-before:page; display:flex; flex-direction:column; }
+
+/* ---------- cover (cream) ---------- */
+.cover{ background:var(--cream); padding:0.9in 0.9in 0.65in; }
+.cover .top{ display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:1px solid var(--line); }
+.cover .kicker{ font-family:'JetBrains Mono',monospace; font-size:9.5pt; letter-spacing:.16em; text-transform:uppercase; color:var(--blue); font-weight:700; }
+.cover h1{ font-size:53pt; line-height:1.02; font-weight:800; color:var(--ink); margin:.55in 0 0; }
+.cover h1 .b{ color:var(--blue); }
+.cover .sub{ font-size:15pt; line-height:1.5; color:var(--slate); max-width:6.2in; margin:18px 0 0; }
+.cover .reassure{ margin-top:auto; display:flex; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; }
+.cover .reassure div{ flex:1; padding:16px 18px; border-right:1px solid var(--line); }
+.cover .reassure div:last-child{ border-right:0; }
+.cover .reassure .k{ font-family:'Bricolage Grotesque'; font-size:17pt; font-weight:800; color:var(--ink); }
+.cover .reassure .v{ font-size:10pt; color:var(--slate); margin-top:2px; }
+.cover .foot{ margin-top:18px; font-size:9.5pt; color:var(--slate); }
+
+/* ---------- headings / overview ---------- */
+.eyebrow{ font-family:'JetBrains Mono',monospace; font-size:9.5pt; letter-spacing:.14em; text-transform:uppercase; color:var(--blue); font-weight:700; }
+h2.sec{ font-size:27pt; font-weight:800; color:var(--ink); margin:6px 0 4px; }
+.lead{ font-size:12.5pt; color:var(--slate); max-width:6in; margin-bottom:20px; }
+.phases{ display:flex; flex-direction:column; gap:13px; }
+.phasecard{ display:flex; gap:18px; align-items:flex-start; background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px 22px; break-inside:avoid; }
+.phasecard .num{ font-family:'Bricolage Grotesque'; font-weight:800; font-size:22pt; color:var(--blue); width:40px; flex:none; line-height:1; padding-top:2px; }
+.phasecard h3{ font-size:15pt; margin:0 0 2px; color:var(--ink); }
+.phasecard p{ margin:0; color:var(--slate); font-size:10.8pt; }
+.phasecard .tag{ margin-left:auto; flex:none; font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:5px 11px; border-radius:20px; }
+.tag.free{ background:var(--blue-soft); color:var(--blue); }
+.tag.opt{ background:var(--cream2); color:var(--slate); }
+.note{ margin-top:18px; background:var(--blue-soft); border-left:4px solid var(--blue); border-radius:0 12px 12px 0; padding:13px 18px; font-size:11pt; }
+.note b{ color:var(--blue); }
+.note.calm{ background:#fff; border-left-color:var(--navy); border:1px solid var(--line); border-left:4px solid var(--navy); }
+
+/* ---------- phase band ---------- */
+.band{ background:var(--ink); color:var(--on-ink); border-radius:18px; padding:15px 24px; margin-bottom:13px; display:flex; align-items:center; gap:16px; break-inside:avoid; }
+.band .pill{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:10pt; letter-spacing:.08em; background:var(--blue); color:#fff; padding:5px 11px; border-radius:8px; text-transform:uppercase; flex:none; }
+.band .bt{ flex:1; }
+.band h2{ font-size:21pt; margin:0; color:#fff; }
+.band p{ margin:2px 0 0; color:var(--on-ink-soft); font-size:10.3pt; }
+.band .wmmini{ font-family:'JetBrains Mono',monospace; font-size:8pt; letter-spacing:.12em; text-transform:uppercase; color:var(--on-ink-mute); flex:none; }
+
+/* ---------- guided steps ---------- */
+.steps{ position:relative; margin-left:6px; }
+.steps::before{ content:""; position:absolute; left:15px; top:14px; bottom:14px; width:2px; background:var(--line); }
+.step{ position:relative; padding:0 0 10px 52px; break-inside:avoid; }
+.step .dot{ position:absolute; left:0; top:-2px; width:32px; height:32px; border-radius:50%; background:#fff; border:2px solid var(--blue); color:var(--ink); font-family:'Bricolage Grotesque'; font-weight:800; font-size:13pt; display:flex; align-items:center; justify-content:center; z-index:1; }
+.step h3{ font-size:13.5pt; margin:0 0 3px; color:var(--ink); }
+.step p{ font-size:11pt; line-height:1.46; color:#2b3654; margin:0 0 5px; }
+.step .plat{ font-family:'JetBrains Mono',monospace; font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); margin-bottom:3px; }
+
+.cmd{ display:block; background:var(--ink); color:#cdd9f5; border-radius:10px; padding:9px 14px; font-family:'JetBrains Mono',monospace; font-size:10.5pt; margin:5px 0 8px; overflow-wrap:anywhere; }
+.cmd .c{ color:var(--blue); filter:brightness(1.5); }
+.pastebox{ display:flex; align-items:center; gap:10px; background:#fff; border:1px dashed var(--blue); border-radius:10px; padding:9px 14px; font-size:10.3pt; margin:5px 0 8px; }
+.pastebox .lbl{ font-weight:700; color:var(--blue); }
+.file{ background:var(--navy); color:#fff; padding:2px 9px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:9.5pt; white-space:nowrap; }
+
+.see,.warn{ border-radius:0 10px 10px 0; padding:7px 13px; font-size:10.3pt; line-height:1.42; margin:5px 0 4px; }
+.see{ background:var(--blue-soft); border-left:3px solid var(--blue); }
+.see b{ color:var(--blue); }
+.warn{ background:var(--amber-soft); border-left:3px solid var(--amber); }
+.warn b{ color:var(--amber); }
+
+.milestone{ background:linear-gradient(120deg,var(--ink),#2a3f86); color:var(--on-ink); border-radius:14px; padding:12px 20px; margin:5px 0 0; break-inside:avoid; }
+.milestone h3{ font-size:14.5pt; margin:0 0 2px; color:#fff; }
+.milestone p{ color:var(--on-ink-soft); margin:0; font-size:11pt; }
+.milestone .big{ color:#fff; }
+.milestone .file{ background:rgba(255,255,255,.14); }
+
+/* ---------- key cards ---------- */
+.keyintro{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:13px 20px; margin-bottom:12px; break-inside:avoid; }
+.keyintro h3{ margin:0 0 6px; font-size:13pt; color:var(--ink); display:flex; align-items:center; gap:8px; }
+.keyintro ol{ margin:6px 0 0; padding-left:20px; }
+.keyintro li{ margin:3px 0; font-size:10.6pt; }
+.keycard{ background:#fff; border:1px solid var(--line); border-radius:16px; margin-bottom:11px; break-inside:avoid; overflow:hidden; }
+.keycard .head{ display:flex; align-items:center; gap:14px; padding:12px 20px; background:var(--cream2); border-bottom:1px solid var(--line); }
+.keycard .ico{ width:38px; height:38px; flex:none; border-radius:10px; background:var(--blue-soft); display:flex; align-items:center; justify-content:center; }
+.keycard .ico svg{ width:22px; height:22px; }
+.keycard .head .t{ flex:1; }
+.keycard .head h3{ margin:0; font-size:14pt; color:var(--ink); }
+.keycard .head .u{ font-size:9.8pt; color:var(--slate); margin-top:1px; }
+.keycard .cost{ flex:none; text-align:right; font-size:9.3pt; color:var(--slate); }
+.keycard .cost .amt{ font-family:'Bricolage Grotesque'; font-weight:800; font-size:13pt; color:var(--ink); }
+.keycard .body{ padding:11px 20px 13px; }
+.keycard ol{ margin:0; padding-left:20px; }
+.keycard ol li{ margin:5px 0; font-size:10.5pt; }
+.keycard .meta{ display:flex; gap:18px; margin-top:11px; padding-top:10px; border-top:1px solid var(--line); font-size:9.4pt; color:var(--slate); flex-wrap:wrap; }
+.keycard .meta b{ color:var(--ink); }
+.keycard .meta .mono{ background:var(--ink); color:#cdd9f5; padding:1px 6px; border-radius:5px; font-size:9pt; }
+
+/* ---------- cost page ---------- */
+.costtable{ background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; margin-bottom:16px; }
+.costrow{ display:flex; align-items:center; gap:14px; padding:13px 20px; border-bottom:1px solid var(--line); break-inside:avoid; }
+.costrow:last-child{ border-bottom:0; }
+.costrow .w{ flex:1; }
+.costrow .w .n{ font-weight:700; color:var(--ink); font-size:11.5pt; }
+.costrow .w .d{ color:var(--slate); font-size:10pt; }
+.costrow .amt{ flex:none; font-family:'Bricolage Grotesque'; font-weight:800; font-size:13.5pt; color:var(--ink); text-align:right; min-width:1.7in; }
+.costrow .amt small{ display:block; font-family:'Hanken Grotesk'; font-weight:500; font-size:8.5pt; color:var(--slate); }
+.bottomline{ display:flex; gap:14px; }
+.blcard{ flex:1; border-radius:16px; padding:18px 20px; break-inside:avoid; }
+.blcard.you{ background:var(--ink); color:var(--on-ink); }
+.blcard.them{ background:#fff; border:1px solid var(--line); }
+.blcard h4{ font-family:'JetBrains Mono',monospace; font-size:8.5pt; letter-spacing:.1em; text-transform:uppercase; margin:0 0 8px; }
+.blcard.you h4{ color:var(--on-ink-mute); }
+.blcard.them h4{ color:var(--slate); }
+.blcard .row{ display:flex; justify-content:space-between; font-size:10.5pt; margin:5px 0; }
+.blcard.you .row span:last-child{ font-family:'Bricolage Grotesque'; font-weight:800; }
+.blcard.them .price{ font-family:'Bricolage Grotesque'; font-weight:800; font-size:20pt; color:var(--ink); margin:2px 0; }
+
+/* ---------- closing (navy) ---------- */
+.close{ background:var(--ink); color:var(--on-ink); }
+.close .inner{ flex:1; display:flex; flex-direction:column; padding:0.9in; }
+.close h2{ font-size:30pt; color:#fff; margin:.35in 0 6px; }
+.close .sub{ color:var(--on-ink-soft); font-size:13pt; max-width:5.7in; }
+.close .cards{ display:flex; gap:14px; margin:24px 0; }
+.close .c{ flex:1; background:#1c2a5c; border:1px solid #2f3f7d; border-radius:14px; padding:17px; }
+.close .c h4{ font-family:'Bricolage Grotesque'; font-weight:700; margin:0 0 5px; color:#fff; font-size:12pt; }
+.close .c p{ margin:0; color:var(--on-ink-soft); font-size:10pt; }
+.close .foot{ margin-top:auto; display:flex; justify-content:space-between; align-items:flex-end; padding-top:22px; border-top:1px solid #2f3f7d; }
+.close .foot .tag{ font-size:10pt; color:var(--on-ink-mute); text-align:right; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<section class="full cover">
+  <div class="top">
+    <div class="logo"><img src="assets/fintok-logo.jpeg" alt="Fintok"><span class="wm">Fintok.news</span></div>
+    <div class="kicker">Setup Guide</div>
+  </div>
+  <h1>Set Up Your Own<br><span class="b">Property Tool.</span></h1>
+  <p class="sub">A plain‑English guide — no coding, and you never open or edit a single file. If you can install an app and copy‑and‑paste into a website, you can do this. We go one small step at a time and tell you exactly what you'll see after each one.</p>
+  <div class="reassure">
+    <div><div class="k">~20 min</div><div class="v">start to finish</div></div>
+    <div><div class="k">Double‑click</div><div class="v">no terminal, no code</div></div>
+    <div><div class="k">Your PC</div><div class="v">your data stays home</div></div>
+  </div>
+  <div class="foot">Your own private property‑lookup tool, running on your computer — at the data companies' cost, with no software markup, no per‑seat fees, and no credits that expire.</div>
+</section>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="full page">
+  <div class="eyebrow">The whole thing, in one look</div>
+  <h2 class="sec">Three phases. You can stop after two.</h2>
+  <p class="lead">Here's the entire journey before we start, so nothing is a surprise. You'll only ever <strong>double‑click</strong> and <strong>use your web browser</strong> — never a command, never a file.</p>
+
+  <div class="phases">
+    <div class="phasecard"><div class="num">1</div><div><h3>Install the engine</h3><p>Install one free app, Docker Desktop — the "motor" OpenProp runs on. Install it once and forget it.</p></div><div class="tag free">One‑time</div></div>
+    <div class="phasecard"><div class="num">2</div><div><h3>Turn OpenProp on</h3><p>Double‑click one file. OpenProp opens in your web browser. You can look up any U.S. address right away.</p></div><div class="tag free">Free</div></div>
+    <div class="phasecard"><div class="num">3</div><div><h3>Add your data (the keys)</h3><p>Owner names, values, equity, phone numbers, AI search — each is a "key" you paste into the app's Settings page. Add what you need.</p></div><div class="tag opt">Optional</div></div>
+  </div>
+
+  <div class="note calm"><b style="color:var(--navy)">You never touch code or files.</b> After Phase 2, OpenProp already works — address, flood zone, and neighborhood income, free. Phase 3 is a menu you turn on inside the app, by pasting keys. There's no wrong order and nothing to break.</div>
+</section>
+
+<!-- ============ PHASE 1 ============ -->
+<section class="page break">
+  <div class="band"><span class="pill">Phase 1</span><div class="bt"><h2>Install the engine</h2><p>One free app, installed once. ~10–15 minutes, mostly waiting.</p></div><span class="wmmini">Fintok · OpenProp</span></div>
+  <div class="steps">
+    <div class="step"><div class="dot">1</div><h3>Find out which computer you have</h3><p>This decides which download button to click — it takes 5 seconds.</p>
+      <div class="plat">On a Mac</div><p>Click the <strong>Apple logo</strong> (very top‑left corner of your screen) → <strong>About This Mac</strong>. If it says <em>M1, M2, M3 or M4</em>, you have "Apple Silicon." If it says <em>Intel</em>, you have "Intel." (Most Macs since 2021 are Apple Silicon.)</p>
+      <div class="plat">On Windows</div><p>You almost certainly want the plain <em>Windows</em> version — that's it.</p></div>
+    <div class="step"><div class="dot">2</div><h3>Download Docker Desktop</h3><p>In your web browser, go to the address below and click the blue button that matches your computer from Step 1:</p>
+      <div class="cmd"><span class="c">↗</span> docker.com/products/docker-desktop</div>
+      <div class="see"><b>What you'll see:</b> a file downloading — <span class="file">Docker.dmg</span> on Mac, or <span class="file">Docker Desktop Installer.exe</span> on Windows.</div></div>
+    <div class="step"><div class="dot">3</div><h3>Install it</h3>
+      <div class="plat">On a Mac</div><p>Open your <strong>Downloads</strong> folder, double‑click <strong>Docker.dmg</strong>. A window pops up — <strong>drag the whale icon onto the Applications folder</strong> shown next to it. Then open <strong>Docker</strong> from your Applications folder and click <strong>Accept</strong> / <strong>Use recommended settings</strong>.</p>
+      <div class="plat">On Windows</div><p>Double‑click the installer, click <strong>OK / Install</strong>, and let it <strong>restart your PC</strong> if it asks. Then open <strong>Docker Desktop</strong> from the Start menu and click <strong>Accept</strong>.</p>
+      <div class="warn"><b>Don't skip the drag on Mac.</b> Running Docker from inside the little pop‑up window causes errors — drag it into <strong>Applications</strong> first, then open it from there.</div></div>
+    <div class="step"><div class="dot">4</div><h3>Wait for the whale</h3><p>The first launch takes a minute or two while it sets itself up. Just wait — you don't need to click anything or make an account.</p>
+      <div class="see"><b>You're done when:</b> a small <strong>whale icon 🐳</strong> appears — in the <strong>top‑right menu bar</strong> on Mac, or the <strong>bottom‑right tray</strong> on Windows (click the ▲ arrow to show hidden icons) — and it stops moving. Leave Docker running; that's all Phase 1 needs.</p></div>
+  </div>
+</section>
+
+<!-- ============ PHASE 2 ============ -->
+<section class="page break">
+  <div class="band"><span class="pill">Phase 2</span><div class="bt"><h2>Turn OpenProp on</h2><p>Download, unzip, double‑click — it opens in your browser. ~5 min.</p></div><span class="wmmini">Fintok · OpenProp</span></div>
+  <div class="steps">
+    <div class="step"><div class="dot">1</div><h3>Download OpenProp</h3><p>When you bought OpenProp you got a <strong>download link</strong> — on the page right after you paid, and again in your <strong>email receipt</strong>. Click it and choose <strong>Save</strong>. The file lands in your computer's <strong>Downloads</strong> folder.</p>
+      <div class="see"><b>What you'll see:</b> a file named <span class="file">openprop.zip</span> in your Downloads folder.</div></div>
+    <div class="step"><div class="dot">2</div><h3>Unzip it</h3><p>Open your <strong>Downloads</strong> folder and double‑click <span class="file">openprop.zip</span>. A folder named <strong>openprop</strong> appears. Drag that folder onto your <strong>Desktop</strong> so it's easy to find.</p></div>
+    <div class="step"><div class="dot">3</div><h3>Double‑click "Start OpenProp"</h3><p>First check that <strong>Docker is running</strong> — the <strong>whale icon 🐳</strong> should be showing from Phase 1 (it usually starts on its own). Then open the <strong>openprop</strong> folder on your Desktop. Right there — not in any sub‑folder — is the file for your computer. Double‑click it:</p>
+      <div class="pastebox"><span class="lbl">Mac</span> <span class="file">Start OpenProp.command</span> &nbsp;·&nbsp; <span class="lbl">Windows</span> <span class="file">Start OpenProp.bat</span></div>
+      <div class="warn"><b>Mac may say "unidentified developer."</b> If it blocks the file, <strong>right‑click</strong> it → <strong>Open</strong> → <strong>Open</strong>. You only do this once, ever.</div>
+      <div class="see"><b>What you'll see:</b> a black window opens and shows progress. <strong>The first time takes a few minutes</strong> while it builds your tool — this is normal. Leave the window; after this it starts in seconds.</div></div>
+    <div class="step"><div class="dot">4</div><h3>Log in</h3><p>Your browser opens by itself to your new tool. If it doesn't within a minute, open your browser and type this into the address bar:</p>
+      <div class="cmd"><span class="c">↗</span> localhost:8787</div>
+      <p>In the <strong>Password</strong> box type the starting password, then click the green <strong>Sign in</strong> button:</p>
+      <div class="pastebox"><span class="lbl">Password</span> <span class="file">changeme</span></div></div>
+  </div>
+  <div class="milestone"><h3>🎉 <span class="big">You're in — that's the setup.</span></h3><p>Look up any U.S. address now — location, flood zone, and income, all free. Start/stop anytime with the <span class="file">Start OpenProp</span> / <span class="file">Stop OpenProp</span> files; turn the page to add more.</p></div>
+</section>
+
+<!-- ============ PHASE 3 ============ -->
+<section class="page break">
+  <div class="band"><span class="pill">Phase 3</span><div class="bt"><h2>Add your data — the keys</h2><p>Optional. Each key unlocks more, and it's all done inside the app.</p></div><span class="wmmini">Fintok · OpenProp</span></div>
+  <div class="keyintro">
+    <h3>🔑 How to add any key — the same 3 clicks every time</h3>
+    <ol>
+      <li>In OpenProp, click <strong>Settings</strong> — the small link in the very <strong>top‑right corner</strong>.</li>
+      <li>You'll see a labeled box for each key. <strong>Paste</strong> your key into the box with the matching name, then click the green <strong>Save</strong> button.</li>
+      <li>On the right, the <strong>"Active now"</strong> list shows a <strong>green dot ●</strong> next to whatever you just switched on. Done — no restart, ever.</li>
+    </ol>
+    <div class="see" style="margin-top:9px"><b>A note on "free" tiers:</b> the free plans below are only for trying things — they cap out fast and will block you mid‑search. For real work, use the paid usage (it's small — see the costs on the next page) so you're never rate‑limited.</div>
+  </div>
+
+  <div class="keycard"><div class="head"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3457c9" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v9h5v-6h4v6h5v-9"/></svg></div><div class="t"><h3>RentCast</h3><div class="u">Owner name, property details, tax history — the essentials</div></div><div class="cost"><div class="amt">~$74/mo</div>for 1,000 lookups</div></div>
+    <div class="body"><ol>
+      <li>Go to <strong>app.rentcast.io/app/api</strong> and click <strong>Sign In</strong> → create an account (email or Google).</li>
+      <li>Click <strong>Select Plan</strong>. For real use pick a paid plan; to just try it, the free <strong>Developer</strong> plan gives 50 lookups.</li>
+      <li>Click <strong>Create API Key</strong>, name it anything, and <strong>copy</strong> the key.</li>
+      <li>In OpenProp: Settings → paste into <strong>RentCast API key</strong> → <strong>Save</strong>.</li>
+    </ol><div class="meta"><span>⏱ ~5 min</span><span>💡 Free tier is 50/mo, then it blocks — a paid plan is ~7¢/lookup</span><span>Key: <span class="mono">a long 32‑character code</span></span></div></div></div>
+
+  <div class="keycard"><div class="head"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3457c9" stroke-width="2"><path d="M12 3v3M12 18v3M4.2 7l2.6 1.5M17.2 15.5l2.6 1.5M4.2 17l2.6-1.5M17.2 8.5l2.6-1.5"/><circle cx="12" cy="12" r="3.2"/></svg></div><div class="t"><h3>Anthropic (Claude)</h3><div class="u">The AI: plain‑English search, property briefs, lead scores, outreach drafts</div></div><div class="cost"><div class="amt">~$5–20/mo</div>pay as you go</div></div>
+    <div class="body"><ol>
+      <li>Go to <strong>console.anthropic.com</strong> and sign up (email or Google), confirming your email.</li>
+      <li>Click <strong>Billing</strong> → add a card → <strong>Buy credits</strong> (the ~$5 minimum). <em>Do this first — the key won't work without credit.</em></li>
+      <li>Click <strong>API Keys</strong> → <strong>Create Key</strong>, then <strong>copy it right away</strong> (it's shown only once).</li>
+      <li>In OpenProp: Settings → paste into <strong>Anthropic API key</strong> → <strong>Save</strong>.</li>
+    </ol><div class="meta"><span>⏱ ~5 min</span><span>💳 A few cents per AI action; you prepay and spend down slowly</span><span>Key starts with <span class="mono">sk‑ant‑</span></span></div></div></div>
+
+  <div class="keycard"><div class="head"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3457c9" stroke-width="2"><path d="M3 21h18M5 21V8l7-4 7 4v13"/><path d="M9 21v-4h6v4M9 12h.01M15 12h.01"/></svg></div><div class="t"><h3>HUD &amp; Census</h3><div class="u">Fair‑market rents by bedroom + neighborhood median income</div></div><div class="cost"><div class="amt">Free</div>real gov data</div></div>
+    <div class="body"><p style="font-size:10.5pt;margin:0 0 7px"><strong>HUD (rents):</strong> at <strong>huduser.gov/hudapi/public/register</strong> make a free account and <em>tick the "Fair Market Rents" box</em>. Create a token, then Settings → <strong>HUD FMR token</strong>.</p>
+      <p style="font-size:10.5pt;margin:0"><strong>Census (income):</strong> at <strong>api.census.gov/data/key_signup.html</strong> fill the short form, then <em>click the activation link in the email</em>. Then Settings → <strong>Census API key</strong>.</p>
+      <div class="meta"><span>⏱ ~10 min for both</span><span>⚠ HUD: must tick <b>Fair Market Rents</b></span><span>⚠ Census: must <b>click the email link</b></span></div></div></div>
+
+  <div class="keycard"><div class="head"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3457c9" stroke-width="2"><path d="M15.5 8.5a4 4 0 10-5.7 3.6L4 18v2h2l1-1h2v-2h2l1.4-1.4a4 4 0 003.1-7.1z"/><circle cx="16" cy="8" r="1"/></svg></div><div class="t"><h3>Apify (skip trace)</h3><div class="u">Find the owner's phone number and email from a property address</div></div><div class="cost"><div class="amt">~10–20¢</div>per lookup</div></div>
+    <div class="body"><ol>
+      <li>Go to <strong>console.apify.com/sign-up</strong>, sign up (email or Google), and <em>click the verification email</em>.</li>
+      <li>Click your <strong>profile picture</strong> (top‑right) → <strong>Settings</strong> → <strong>API &amp; Integrations</strong>, then copy your <strong>Personal API token</strong>.</li>
+      <li>In OpenProp Settings: set <strong>Skip‑trace vendor = apify</strong>, paste the token into <strong>Skip‑trace API key</strong> → <strong>Save</strong>.</li>
+    </ol><div class="meta"><span>⏱ ~4 min</span><span>💡 You pay only when you pull a contact</span><span>Token starts with <span class="mono">apify_api_</span></span></div></div></div>
+
+  <div class="keycard"><div class="head"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3457c9" stroke-width="2"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-5h6v5"/><path d="M12 4v3"/></svg></div><div class="t"><h3>RealEstateAPI</h3><div class="u">Home value, equity, mortgage balance, and distress flags (foreclosure, liens)</div></div><div class="cost"><div class="amt">Trial</div>then premium</div></div>
+    <div class="body"><ol>
+      <li>Go to <strong>realestateapi.com</strong> and click <strong>Start Free Trial</strong>; sign up with your email. <em>You may be asked to book a short call to switch your account on — that's normal.</em></li>
+      <li>Log in at <strong>dashboard.realestateapi.com</strong> → open the <strong>Keys</strong> section → copy your <strong>API key</strong>.</li>
+      <li>In OpenProp: Settings → paste into <strong>RealEstateAPI key</strong> → <strong>Save</strong>.</li>
+    </ol><div class="meta"><span>⏱ ~5–10 min</span><span>⚠ The <b>one premium option</b> — great free trial, but ~$600/mo to keep, so most people skip it</span></div></div></div>
+
+  <div class="note"><b>Which keys do you actually need?</b> For most people: <strong>RentCast</strong> (the essentials) + <strong>Claude</strong> (the AI) + the free <strong>HUD/Census</strong> data. Add <strong>Apify</strong> when you want phone numbers. <strong>RealEstateAPI</strong> is only worth it if deep equity/distress data is central to your business.</div>
+</section>
+
+<!-- ============ COSTS ============ -->
+<section class="page break">
+  <div class="eyebrow">Straight talk about money</div>
+  <h2 class="sec">What it really costs.</h2>
+  <p class="lead">OpenProp itself is free — you only pay the data companies for what you use, at <strong>their</strong> price, with no markup. Here's an honest, slightly‑high estimate so nothing surprises you.</p>
+
+  <div class="costtable">
+    <div class="costrow"><div class="w"><div class="n">RentCast — owner, property &amp; tax</div><div class="d">The core data. About 7¢ a lookup on a paid plan.</div></div><div class="amt">$0–74<small>free to try · ~$74/mo real use</small></div></div>
+    <div class="costrow"><div class="w"><div class="n">Claude AI — search, briefs, scoring</div><div class="d">A few cents per action, prepaid and spent down.</div></div><div class="amt">$5–20<small>per month, as you use it</small></div></div>
+    <div class="costrow"><div class="w"><div class="n">Skip trace — phone &amp; email</div><div class="d">Only when you pull a contact. ~10–20¢ each.</div></div><div class="amt">$0–20<small>per month, usage‑based</small></div></div>
+    <div class="costrow"><div class="w"><div class="n">Rents · income · flood (HUD, Census, FEMA)</div><div class="d">Real U.S. government data. No meaningful limits.</div></div><div class="amt">$0<small>always free</small></div></div>
+    <div class="costrow"><div class="w"><div class="n">RealEstateAPI — equity &amp; distress</div><div class="d">Optional. Generous trial; pricey to keep.</div></div><div class="amt">trial<small>~$600/mo after — most skip it</small></div></div>
+  </div>
+
+  <div class="bottomline">
+    <div class="blcard you">
+      <h4>Your likely bill</h4>
+      <div class="row"><span>Occasional (a few lookups a week)</span><span>~$15–25/mo</span></div>
+      <div class="row"><span>Active (hunting deals daily)</span><span>~$90–110/mo</span></div>
+      <p style="margin:10px 0 0;font-size:9.6pt;color:var(--on-ink-mute)">…and you're paying the data companies directly — at cost, no seats, no expiring credits.</p>
+    </div>
+    <div class="blcard them">
+      <h4>The usual subscription tools</h4>
+      <div class="price">$100–200+<span style="font-size:11pt;color:var(--slate)">/mo</span></div>
+      <p style="margin:2px 0 0;font-size:10pt;color:var(--slate)">A subscription forever, a marked‑up price, per‑seat fees, and skip‑trace credits that expire if you don't use them.</p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:16px"><b>Rule of thumb:</b> only add the keys you'll actually use, and keep an eye on the spend meter at the top of the app. It caps paid calls at a limit you set in Settings.</div>
+</section>
+
+<!-- ============ CLOSING ============ -->
+<section class="close-sheet close">
+  <div class="inner">
+    <div class="logo on-dark"><img src="assets/fintok-logo.jpeg" alt="Fintok"><span class="wm">Fintok.news</span></div>
+    <h2>You own it now.</h2>
+    <p class="sub">OpenProp runs on your computer, with your keys, showing your searches to no one. No subscription, no seat fee, no expiring credits. Start it any time by double‑clicking <span class="file" style="background:rgba(255,255,255,.14)">Start OpenProp</span> in the openprop folder.</p>
+    <div class="cards">
+      <div class="c"><h4>It's private</h4><p>Everything saves on your machine. Your lookups and notes never leave it.</p></div>
+      <div class="c"><h4>It's yours</h4><p>Keys are pasted in Settings and can be changed or removed anytime. No lock‑in.</p></div>
+      <div class="c"><h4>It's honest</h4><p>You pay the data providers at cost — no markup, no expiring credits, no surprises.</p></div>
+    </div>
+    <div class="foot">
+      <div class="logo on-dark sm"><img src="assets/fintok-logo.jpeg" alt=""><span class="wm">Fintok.news</span></div>
+      <div class="tag">OpenProp — made to be owned, not rented.</div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

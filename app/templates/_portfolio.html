@@ -1,0 +1,16 @@
+{# Owner's other properties (linked-properties / portfolio parity). #}
+{% if properties %}
+<div class="text-sm">
+  <div class="text-slate-500 mb-1">{{ properties|length }} other propert{{ 'y' if properties|length == 1 else 'ies' }} tied to this owner:</div>
+  <ul class="space-y-1">
+    {% for p in properties %}
+    <li class="flex justify-between border-b border-slate-100 py-1">
+      <span>{{ p.address }}{% if p.city %}, {{ p.city }}, {{ p.state }}{% endif %}</span>
+      <span class="text-slate-500">{% if p.market_value %}${{ '{:,}'.format(p.market_value) }}{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% else %}
+<p class="text-sm text-slate-400">No other properties for this owner in your cache yet.</p>
+{% endif %}

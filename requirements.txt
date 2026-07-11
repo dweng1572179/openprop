@@ -1,0 +1,12 @@
+# OpenProp — self-hosted property intelligence. Lean by design.
+# SQLite is stdlib; HTMX/Tailwind/MapLibre are CDN (no JS build).
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+jinja2==3.1.5
+itsdangerous==2.2.0          # signed session cookies (Starlette SessionMiddleware)
+httpx==0.28.1
+python-multipart==0.0.20     # form posts from HTMX
+openpyxl==3.1.5              # xlsx export
+anthropic==0.116.0          # needs messages.parse (structured outputs); AI degrades to rules without a key
