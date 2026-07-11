@@ -137,8 +137,14 @@ def saved_delete(request: Request, search_id: int, _=Depends(require_auth)):
 
 
 def _parcel_tiles() -> str | None:
-    """Regrid vector-tile URL for the parcel overlay, if configured."""
-    rp = registry.property_provider() if settings.property_provider == "regrid" else None
+    """Regrid vector-tile URL for the parcel overlay, if configured.
+
+    A token is necessary but NOT sufficient: Regrid sells the API key free and the
+    parcel DATA by subscription. An unlicensed account authenticates fine (HTTP 200)
+    and returns an empty FeatureCollection everywhere, and its tiles come back 204 —
+    so the overlay just draws nothing. If parcels don't appear, check coverage on the
+    Regrid account before suspecting this code.
+    """
     try:
         from .providers.regrid import RegridProvider
         if settings.regrid_api_token:
