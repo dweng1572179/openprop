@@ -138,6 +138,27 @@ def test_float_to_int_coercion():
     print("float->int coercion OK")
 
 
+
+
+def test_filter_extract_schema_is_grammar_safe():
+    """Pins the two rules that make structured outputs work — both were real bugs
+    that silently degraded every AI search to the rules parser:
+      1. >16 union-typed (nullable) params -> hard 400.
+      2. any OPTIONAL param (a field with a default) -> 2^N grammar shapes -> the
+         request HANGS past the timeout instead of erroring.
+    No network: this reads the JSON schema the SDK would send."""
+    from app.ai import FilterExtract
+    s = FilterExtract.model_json_schema()
+    props, required = s["properties"], set(s.get("required") or [])
+
+    unions = [k for k, v in props.items() if "anyOf" in v or isinstance(v.get("type"), list)]
+    assert not unions, f"union/nullable params 400 the API (limit 16): {unions}"
+
+    optional = [k for k in props if k not in required]
+    assert not optional, f"optional params explode grammar compilation -> hang: {optional}"
+    print("FilterExtract schema is grammar-safe OK")
+
+
 if __name__ == "__main__":
     test_batchdata_mapping()
     test_apify_mapping()
@@ -146,4 +167,5 @@ if __name__ == "__main__":
     test_reapi_nested_detail_still_maps()
     test_reapi_search_body_uses_real_filter_keys()
     test_float_to_int_coercion()
+    test_filter_extract_schema_is_grammar_safe()
     print("providers test OK")

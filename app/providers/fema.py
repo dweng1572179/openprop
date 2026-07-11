@@ -26,11 +26,21 @@ class FemaFloodProvider:
                 "returnGeometry": "false",
                 "f": "json",
             }
-            r = httpx.get(_URL, params=params, headers=_UA, timeout=_TIMEOUT)
-            r.raise_for_status()
-            if "json" not in r.headers.get("content-type", ""):
-                raise ValueError("FEMA NFHL returned non-JSON (service outage?)")
-            return r.json()
+            # A healthy NFHL answers in <1s, but this free gov service intermittently
+            # stalls past the timeout — and services.lookup swallows the error, so a
+            # blip silently drops the flood zone off the card. Retry once; it's free
+            # and the result is cached, so the retry costs nothing but the wait.
+            last = None
+            for _ in range(2):
+                try:
+                    r = httpx.get(_URL, params=params, headers=_UA, timeout=_TIMEOUT)
+                    r.raise_for_status()
+                    if "json" not in r.headers.get("content-type", ""):
+                        raise ValueError("FEMA NFHL returned non-JSON (service outage?)")
+                    return r.json()
+                except (httpx.TimeoutException, httpx.TransportError) as e:
+                    last = e
+            raise last
 
         data = cached("fema", "flood_zone", {"lat": round(lat, 6), "lng": round(lng, 6)},
                       fetch, cost_cents=0)

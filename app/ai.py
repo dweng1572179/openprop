@@ -3,12 +3,16 @@ by one BYO Anthropic key. Structured features (NL->filters, lead score) use
 messages.parse() for schema-validated output; prose features (brief, outreach)
 use plain messages. With no key set, nl_to_filters falls back to a rules-based
 parser so AI Search still works offline; the prose features return None."""
+import logging
 import re
+from typing import Literal
 
 from pydantic import BaseModel
 
 from .config import settings
 from .models import SearchFilters
+
+log = logging.getLogger("openprop")
 
 
 class LeadScore(BaseModel):
@@ -16,37 +20,69 @@ class LeadScore(BaseModel):
     reasons: list[str]  # explainable signals
 
 
+_UNSET = ""          # a field the query didn't mention
+_Flag = Literal["", "yes", "no"]
+
+
 class FilterExtract(BaseModel):
-    """Lean subset of SearchFilters for the LLM — the fields people actually say
-    in a query. Kept under structured-outputs' 24-optional-field cap (SearchFilters
-    has 26); merged back into a full SearchFilters after extraction."""
-    state: str | None = None
-    city: str | None = None
-    zip: str | None = None
-    property_type: str | None = None
-    beds_min: float | None = None
-    year_built_min: int | None = None
-    year_built_max: int | None = None
-    value_min: int | None = None
-    value_max: int | None = None
-    equity_pct_min: int | None = None
-    years_owned_min: int | None = None
-    absentee: bool | None = None
-    out_of_state: bool | None = None
-    owner_occupied: bool | None = None
-    corporate_owned: bool | None = None
-    high_equity: bool | None = None
-    tax_delinquent: bool | None = None
-    vacant: bool | None = None
-    pre_foreclosure: bool | None = None
-    median_income_min: int | None = None
+    """Lean subset of SearchFilters for the LLM, merged back into a full
+    SearchFilters after extraction.
+
+    Two rules here are load-bearing, not style — both were learned the hard way:
+
+    1. NO `| None`. Structured outputs reject >16 union-typed (nullable) params
+       ("too many parameters with union types ... limit: 16"). These 20 fields as
+       `X | None` = 20 unions = a hard 400.
+    2. NO DEFAULTS — every field is REQUIRED. A default makes a field *optional* in
+       the JSON schema, and each optional field is a present/absent branch, so 20 of
+       them is 2^20 shapes for the grammar compiler: the request doesn't 400, it just
+       HANGS (>75s, times out) on every model, Haiku included. All-required = one
+       shape = 5s.
+
+    Either mistake lands in the same place: nl_to_filters catches, falls back to the
+    rules parser, and the AI search silently drops constraints the user actually typed
+    ("San Antonio", "under $400k") while still looking like it worked.
+
+    So: sentinels, not nulls. "" / 0 mean "not mentioned". Flags are a 3-state enum
+    so "not absentee" stays distinguishable from "absentee not mentioned"."""
+    state: str
+    city: str
+    zip: str
+    property_type: str
+    beds_min: float
+    year_built_min: int
+    year_built_max: int
+    value_min: int
+    value_max: int
+    equity_pct_min: int
+    years_owned_min: int
+    median_income_min: int
+    absentee: _Flag
+    out_of_state: _Flag
+    owner_occupied: _Flag
+    corporate_owned: _Flag
+    high_equity: _Flag
+    tax_delinquent: _Flag
+    vacant: _Flag
+    pre_foreclosure: _Flag
+
+    def to_filters(self) -> SearchFilters:
+        """Sentinels -> None, so unmentioned fields don't become real filters."""
+        out: dict = {}
+        for k, v in self.model_dump().items():
+            if v in ("", 0):
+                continue                      # not mentioned
+            out[k] = {"yes": True, "no": False}.get(v, v) if isinstance(v, str) else v
+        return SearchFilters(**out)
 
 _MODEL = settings.llm_model
 
 
 def _client():
     import anthropic
-    return anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    # bounded: the SDK default is 10min, so a bad schema/outage froze the request
+    # instead of degrading to the rules parser.
+    return anthropic.Anthropic(api_key=settings.anthropic_api_key, timeout=60.0)
 
 
 def available() -> bool:
@@ -116,14 +152,19 @@ def nl_to_filters(query: str) -> SearchFilters:
         resp = _client().messages.parse(
             model=_MODEL, max_tokens=1024,
             system=("Convert the user's plain-English real-estate search into structured "
-                    "filters. Only set fields the query explicitly implies; leave the rest null. "
-                    "State must be a 2-letter code."),
+                    "filters. Every field is required: use \"\" for text/flags and 0 for "
+                    "numbers the query does not mention. Set a flag to \"yes\"/\"no\" only "
+                    "when the query says so. State must be a 2-letter code."),
             messages=[{"role": "user", "content": query}],
             output_format=FilterExtract,
         )
         # merge the lean extraction into a full SearchFilters (limit defaults to 100)
-        return SearchFilters(**resp.parsed_output.model_dump(exclude_none=True))
-    except Exception:  # noqa: BLE001 — any parse/API failure degrades to rules
+        return resp.parsed_output.to_filters()
+    except Exception as e:  # noqa: BLE001 — any parse/API failure degrades to rules
+        # LOUDLY: a silent fallback here hid a 400 for the entire life of the app and
+        # made every AI search quietly drop half the user's query. Degrade, but say so.
+        log.warning("AI filter extraction failed (%s) — falling back to the rules parser, "
+                    "which understands far less of the query: %s", type(e).__name__, e)
         return _rules_parse(query)
 
 

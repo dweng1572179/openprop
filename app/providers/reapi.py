@@ -321,16 +321,36 @@ class ReapiSkipTrace:
         persons = (resp or {}).get("persons") or []
         if not persons:
             return None
-        p = persons[0]
+        p = persons[0]  # the owner match — keep as the record's identity
+
+        # A SkipTrace often returns the owner with emails but NO phone, while a
+        # same-surname household member at that address has live numbers (verified:
+        # Rolando Villarreal -> 0 phones/3 emails, Maria Villarreal -> 2 phones).
+        # Taking persons[0] alone threw those away and the lead looked uncallable.
+        # Household = same last name only; unrelated co-residents are NOT the owner
+        # and calling them isn't a lead, it's a wrong number.
+        # Match on surname TOKENS, not equality: the household member here is
+        # "Loredo Villarreal" (compound surname), which == "Villarreal" is false.
+        # Token match keeps her and still drops the unrelated co-residents.
+        surname = (p.get("lastName") or "").strip().lower()
+        household = [q for q in persons[1:]
+                     if surname and surname in (q.get("lastName") or "").lower().split()]
+
+        phones = [self._map_phone(ph) for ph in (p.get("phones") or [])]
+        emails = [{"email": e} for e in (p.get("emails") or []) if e]
+        for q in household:
+            who = q.get("fullName")
+            phones += [{**self._map_phone(ph), "belongs_to": who} for ph in (q.get("phones") or [])]
+            emails += [{"email": e, "belongs_to": who} for e in (q.get("emails") or []) if e]
 
         addresses = [self._map_address(a) for a in (p.get("address"), p.get("previousAddress")) if a]
         return ContactRecord(
             person_name=p.get("fullName"),
             age=p.get("age"),
-            phones=[self._map_phone(ph) for ph in (p.get("phones") or [])],
+            phones=phones,
             # ponytail: v2 emails are bare strings (no is_validated/is_business
             # flag v1 carried) — wrap each so the ContactRecord email dict shape holds.
-            emails=[{"email": e} for e in (p.get("emails") or []) if e],
+            emails=emails,
             addresses=addresses,
             # v2 SkipTrace exposes no numeric identity/match score (v1 had only a
             # `match` boolean), so identity_score stays None.
