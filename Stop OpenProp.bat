@@ -1,5 +1,4 @@
 @echo off
-cd /d "%~dp0"
-docker compose down
-echo OpenProp stopped.
+taskkill /f /im uvicorn.exe >nul 2>nul
+echo OpenProp stopped. You can close this window.
 pause
