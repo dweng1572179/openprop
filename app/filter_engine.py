@@ -55,6 +55,13 @@ def matches(rec: PropertyRecord, f: SearchFilters) -> bool:
     return True
 
 
+def _usable(rec: PropertyRecord) -> bool:
+    """A row with neither an owner nor any value can't be worked as a lead. A coarse
+    area listing is full of them — unit-level rows the assessor has no record for —
+    so they're dropped rather than padding the list out to f.limit."""
+    return bool(rec.owner_name or rec.assessed_value or rec.market_value)
+
+
 def _completeness(rec: PropertyRecord) -> int:
     """How usable a row is as a lead. A coarse area listing mixes full assessor
     records with unit-level rows carrying nothing but an address (RentCast zip
@@ -65,7 +72,7 @@ def _completeness(rec: PropertyRecord) -> int:
 
 
 def apply_filters(records: list[PropertyRecord], f: SearchFilters) -> list[PropertyRecord]:
-    out = [r for r in records if matches(r, f)]
+    out = [r for r in records if _usable(r) and matches(r, f)]
     out.sort(key=_completeness, reverse=True)  # stable: ties keep provider order
     return out[: f.limit]
 
@@ -78,7 +85,8 @@ def demo() -> None:
                        absentee=False, property_type="Single Family"),
         PropertyRecord(address="3 C", state="CA", market_value=900_000, equity_pct=80,
                        absentee=True, property_type="Condo"),
-        PropertyRecord(address="4 D", state="TX", absentee=True),  # unknown value/equity
+        PropertyRecord(address="4 D", state="TX", owner_name="D Owner", absentee=True),  # unknown value
+        PropertyRecord(address="5 E", state="TX", absentee=True),  # address only -> dropped as unusable
     ]
     # absentee TX SFR with 50%+ equity, value <= 500k -> only "1 A"
     f = SearchFilters(state="TX", absentee=True, equity_pct_min=50, value_max=500_000,
@@ -93,9 +101,13 @@ def demo() -> None:
     # explicit absentee=False selects only the owner-occupied one
     assert [r.address for r in apply_filters(recs, SearchFilters(absentee=False))] == ["2 B"]
 
-    # limit truncates — and keeps the rows with data over the empty ones
+    # a row with no owner and no value is never returned, filters or not
+    assert "5 E" not in [r.address for r in apply_filters(recs, SearchFilters())]
+    assert apply_filters([PropertyRecord(address="bare")], SearchFilters()) == []
+
+    # limit truncates — and keeps the fullest rows over the thinner ones
     assert len(apply_filters(recs, SearchFilters(limit=2))) == 2
-    thin = [PropertyRecord(address=f"empty {i}") for i in range(5)]
+    thin = [PropertyRecord(address=f"owner only {i}", owner_name="X") for i in range(5)]
     rich = PropertyRecord(address="rich", owner_name="A Owner", assessed_value=100_000)
     assert [r.address for r in apply_filters(thin + [rich], SearchFilters(limit=1))] == ["rich"]
     print("filter_engine.demo OK")

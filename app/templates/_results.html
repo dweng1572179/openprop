@@ -11,7 +11,8 @@
 {% endif %}
 
 <div class="flex items-center justify-between mb-2">
-  <span class="text-sm text-slate-500">{{ results|length }} propert{{ 'y' if results|length == 1 else 'ies' }}</span>
+  <span class="text-sm text-slate-500">{{ results|length }} propert{{ 'y' if results|length == 1 else 'ies' }}
+    <span class="text-xs text-slate-400">— rows with no owner and no value are hidden</span></span>
 </div>
 
 {% if results %}
