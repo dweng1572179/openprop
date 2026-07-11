@@ -16,6 +16,8 @@ from app.cache import cached, spend_this_month  # noqa: E402
 from app.db import init_db, save_property       # noqa: E402
 from app.flags import owner_key                  # noqa: E402
 
+init_db()  # pytest runs the tests without __main__ below, and they need the schema
+
 
 def test_cache_none_is_a_hit_and_not_double_billed():
     # a paid fetch that returns None must be cached as a real hit — not re-fetched

@@ -53,10 +53,17 @@ paid calls past the cap and shows a running spend total.
 python -m tests.test_smoke     # end-to-end: auth + live geocode + card + notes + skiptrace + AI
 python -m tests.test_rentcast  # RentCast field mapping (canned JSON)
 python -m tests.test_export    # CSV / XLSX export
+python -m tests.test_cache_db  # cache-as-hit / spend accounting / NULL-zip dedupe
+python -m tests.test_providers # provider field mapping (canned JSON)
 python -m app.flags            # computed-flag logic
 python -m app.filter_engine    # local filter engine
 python -m app.ai               # NL-parser rules fallback
 ```
+
+Each test module sets its own env (temp DB, blank keys) at import, so run them
+**one process at a time** — as above, or `pytest tests/test_smoke.py`. A single
+`pytest tests` run imports every module first, and the first one to import wins
+the config singleton, so the others get a DB and a password they didn't ask for.
 
 ## Layout
 
