@@ -177,9 +177,11 @@ class ReapiProvider:
             # report we don't call here). Ceiling: this is a coarse presence bit only.
             "lien": raw.get("lien") if raw.get("lien") is not None else raw.get("taxLien"),
             "probate": _any_flag(raw, "death", "deathTransfer", "spousalDeath", "inherited"),
-            # ponytail: tax_delinquent is a PropertySearch FILTER, not a documented
-            # PropertyDetail boolean — resolves to None on detail lookups.
-            "tax_delinquent": raw.get("taxDelinquent"),
+            # backed by the same taxLien signal the tax_lien filter selects on, so a
+            # row returned by that filter actually shows the flag (it used to read a
+            # `taxDelinquent` key REAPI never sends, so the column was always blank).
+            "tax_delinquent": (raw.get("taxDelinquent") if raw.get("taxDelinquent") is not None
+                               else raw.get("taxLien")),
             "vacant": raw.get("vacant"),
             "source": "reapi",
         }
@@ -223,7 +225,12 @@ class ReapiProvider:
             "absentee_owner": f.absentee,
             "corporate_owned": f.corporate_owned,
             "high_equity": f.high_equity,
-            "tax_delinquent": f.tax_delinquent,
+            # REAPI has NO boolean `tax_delinquent` — sending one is a hard 400
+            # ("tax_delinquent is not allowed"), which took the whole search down.
+            # The boolean it does expose is `tax_lien`; the only other delinquency
+            # filter is tax_delinquent_year_min (a year, not a flag). So OpenProp's
+            # tax-delinquent filter rides on the tax-lien signal.
+            "tax_lien": f.tax_delinquent,
             "vacant": f.vacant,
             "pre_foreclosure": f.pre_foreclosure,
         }

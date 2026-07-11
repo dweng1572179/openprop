@@ -115,6 +115,22 @@ def test_reapi_nested_detail_still_maps():
     print("reapi nested detail mapping OK")
 
 
+def test_reapi_search_body_uses_real_filter_keys():
+    """Every key here was probed against the live API. `tax_delinquent` is NOT a
+    REAPI key — sending it 400s ('tax_delinquent is not allowed') and takes the
+    whole search down, so the filter must go out as `tax_lien`."""
+    from app.models import SearchFilters
+    body = ReapiProvider.__new__(ReapiProvider)._search_body(
+        SearchFilters(state="TX", city="San Antonio", tax_delinquent=True,
+                      pre_foreclosure=True, vacant=True, equity_pct_min=40, limit=5))
+    assert "tax_delinquent" not in body, "tax_delinquent is a 400 — must map to tax_lien"
+    assert body["tax_lien"] is True
+    # the rest of the keys, as accepted by the live endpoint
+    assert body["equity_percent_min"] == 40 and body["pre_foreclosure"] is True
+    assert body["size"] == 5
+    print("reapi search-body filter keys OK")
+
+
 def test_float_to_int_coercion():
     # Regrid GIS sqft arrives fractional; PropertyRecord must not choke
     r = PropertyRecord(address="1 X", lot_sqft=1234.7, market_value=399999.4)
@@ -128,5 +144,6 @@ if __name__ == "__main__":
     test_reapi_mapping()
     test_reapi_search_row_is_flat()
     test_reapi_nested_detail_still_maps()
+    test_reapi_search_body_uses_real_filter_keys()
     test_float_to_int_coercion()
     print("providers test OK")
