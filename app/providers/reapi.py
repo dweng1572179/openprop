@@ -91,15 +91,13 @@ class ReapiProvider:
 
     def _map_record(self, raw: dict, fallback_address: str = "") -> dict:
         """REAPI PropertyDetail `data{}` (or a PropertySearch result row) -> the
-        PropertyRecord field dict. Written defensively: PropertyDetail nests
-        attributes under propertyInfo/lotInfo/etc. while search rows are flatter,
-        so every block falls back to the top level.
-        ponytail: the contract gives EXACT names only for the distress/legal +
-        valuation + owner blocks (mapped verbatim below); propertyInfo/taxInfo
-        subfield names (yearBuilt, bedrooms, assessedValue, ...) are inferred and
-        the PropertySearch result-row schema isn't documented at all. Ceiling:
-        confirm physical/tax coverage against a live sandbox response — until
-        then those gets simply resolve to None and are dropped."""
+        PropertyRecord field dict. The two shapes DIFFER and both are handled:
+        PropertyDetail nests under propertyInfo/lotInfo/taxInfo/ownerInfo, while a
+        PropertySearch row is FLAT and uses its own names for several fields
+        (squareFeet not livingSquareFeet, lastSaleAmount not lastSalePrice,
+        companyName/owner1LastName not owner1FullName). Search-row shape verified
+        live against zip 90007 (2026-07-11); reading only the nested blocks silently
+        blanked owner/value/beds on every search result."""
         prop = raw.get("propertyInfo") or {}
         lot = raw.get("lotInfo") or {}
         tax = raw.get("taxInfo") or {}
@@ -115,7 +113,7 @@ class ReapiProvider:
             state = addr.get("state") or raw.get("state")
             zipc = addr.get("zip") or raw.get("zip")
 
-        mail = owner.get("mailAddress") or {}
+        mail = owner.get("mailAddress") or raw.get("mailAddress") or {}
         owner_mailing = mail.get("label") or mail.get("address") or None
         if not owner_mailing and mail:
             owner_mailing = ", ".join(
@@ -123,37 +121,50 @@ class ReapiProvider:
             ) or None
 
         equity_pct = raw.get("equityPercent")
+        # a search row spells the owner across companyName / owner1FirstName+LastName;
+        # PropertyDetail hands us a single owner1FullName.
+        person = " ".join(str(x) for x in (raw.get("owner1FirstName"), raw.get("owner1LastName")) if x)
         rec = {
             # identity / location
-            "apn": lot.get("apn"),
+            "apn": lot.get("apn") or raw.get("apn"),
             "address": full_addr or fallback_address,  # PropertyRecord.address is required
             "city": city,
             "state": state,
             "zip": zipc,
-            "lat": lot.get("latitude"),
-            "lng": lot.get("longitude"),
-            # physical (inferred REAPI names — see docstring ponytail)
-            "property_type": prop.get("propertyType"),
-            "year_built": prop.get("yearBuilt"),
-            "beds": prop.get("bedrooms"),
-            "baths": prop.get("bathrooms"),
-            "building_sqft": prop.get("livingSquareFeet") or prop.get("buildingSquareFeet"),
-            "lot_sqft": prop.get("lotSquareFeet") or lot.get("lotSquareFeet"),
-            # valuation / tax (EXACT names from contract for the value block)
-            "assessed_value": tax.get("assessedValue"),
+            "lat": lot.get("latitude") or raw.get("latitude"),
+            "lng": lot.get("longitude") or raw.get("longitude"),
+            # physical
+            "property_type": prop.get("propertyType") or raw.get("propertyType"),
+            "year_built": prop.get("yearBuilt") or raw.get("yearBuilt"),
+            "beds": prop.get("bedrooms") or raw.get("bedrooms"),
+            "baths": prop.get("bathrooms") or raw.get("bathrooms"),
+            "building_sqft": (prop.get("livingSquareFeet") or prop.get("buildingSquareFeet")
+                              or raw.get("squareFeet")),
+            "lot_sqft": prop.get("lotSquareFeet") or lot.get("lotSquareFeet") or raw.get("lotSquareFeet"),
+            # valuation / tax
+            "assessed_value": tax.get("assessedValue") or raw.get("assessedValue"),
             "market_value": raw.get("estimatedValue"),
             "est_loan_balance": raw.get("openMortgageBalance"),
-            "est_equity": raw.get("equity") if raw.get("equity") is not None else raw.get("estimatedEquity"),
+            # estimatedEquity is the dollar figure. `equity` is a BOOLEAN on a search
+            # row (the high-equity filter bit), so it must never be read as an amount —
+            # doing so reported $0 equity on a property with $1.39M of it.
+            "est_equity": raw.get("estimatedEquity"),
             "equity_pct": round(equity_pct) if equity_pct is not None else None,
-            "tax_amount": tax.get("taxAmount"),
+            "tax_amount": tax.get("taxAmount") or raw.get("taxAmount"),
             "last_sale_date": sale.get("lastSaleDate") or raw.get("lastSaleDate"),
-            "last_sale_price": sale.get("lastSalePrice") or raw.get("lastSalePrice"),
+            "last_sale_price": (sale.get("lastSalePrice") or raw.get("lastSalePrice")
+                                or raw.get("lastSaleAmount")),
             # owner
-            "owner_name": owner.get("owner1FullName") or owner.get("companyName"),
+            "owner_name": owner.get("owner1FullName") or owner.get("companyName") or person or raw.get("companyName"),
             "owner_mailing_addr": owner_mailing,
             "owner_occupied": owner.get("ownerOccupied") if owner.get("ownerOccupied") is not None
             else raw.get("ownerOccupied"),
-            "corporate_owned": owner.get("corporateOwned"),
+            "corporate_owned": (owner.get("corporateOwned") if owner.get("corporateOwned") is not None
+                                else raw.get("corporateOwned")),
+            "years_owned": raw.get("yearsOwned"),
+            # enrichment the search row already paid for — no extra call needed
+            "rent_estimate": raw.get("rentAmount"),
+            "median_income": raw.get("medianIncome"),
             "absentee": raw.get("absenteeOwner"),
             "out_of_state": raw.get("outOfStateAbsenteeOwner"),
             # distress / legal — the whole point of the unlock (EXACT REAPI names)
