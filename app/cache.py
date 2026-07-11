@@ -78,7 +78,8 @@ def cached(provider: str, endpoint: str, req: dict, fetch, cost_cents: int = 0):
         if cost_cents > 0 and spend_this_month() + cost_cents > settings.monthly_budget_cents:
             raise BudgetExceeded(
                 f"{provider}/{endpoint} would cost {cost_cents}c; "
-                f"{budget_remaining_cents()}c left this month. Raise MONTHLY_BUDGET_CENTS to proceed."
+                f"{budget_remaining_cents()}c left this month. Raise the monthly cap in "
+                f"Settings to continue (applies immediately, no restart)."
             )
         # ponytail: if fetch() raises AFTER the provider billed (200 then bad JSON),
         # the cost isn't booked and a retry re-bills. Rare; accepted for occasional

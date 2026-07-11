@@ -44,8 +44,10 @@ provider still on `reapi` yields "no property provider configured".
 - **HUD FMR / Census** — free FMR + median-income enrichment
 - **Anthropic** — AI search / brief / lead score / outreach (rules-based NL fallback without it)
 
-Budget guardrail: the monthly paid-spend cap (also editable in Settings) refuses
-paid calls past the cap and shows a running spend total.
+Budget guardrail: a monthly paid-spend cap refuses paid calls past the limit (free
+data still works) and shows a running spend total in the header. **Adjust it anytime**
+in the browser — **Settings → "Monthly paid-spend cap (cents)"** — and it applies
+immediately, no restart. Set it to whatever you're comfortable spending.
 
 ## Checks
 
