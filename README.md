@@ -26,9 +26,13 @@ provider keys are managed from the dashboard.
 
 Runs with **zero keys** on free Census geocoding + FEMA flood. Paste keys in
 Settings to unlock, each optional:
-- **RentCast** — owner / value / rent / comps (free 50/mo)
+- **RealEstateAPI** — the list builder. Set `PROPERTY_PROVIDER=reapi` for this. Its
+  area search is the only one that returns a workable lead on every row (owner,
+  value, equity, loan balance, foreclosure/lien/probate/vacant), plus alt skip trace.
+- **RentCast** — per-address detail + AVM/rent comps (free 50/mo). Good for single
+  lookups; its *bulk* listing carries no value/equity/distress and is mostly blank
+  rows in dense zips, so equity/distress filters match nothing when it backs search.
 - **Skip-trace vendor** (BatchData, or an Apify actor — set `SKIPTRACE_PROVIDER=apify` + your `apify_api_...` token) — contact lookup (pay-per-hit)
-- **RealEstateAPI** — nationwide distress flags (foreclosure/lien/probate) + alt skip trace
 - **Regrid** — parcel-boundary map overlay
 - **HUD FMR / Census** — free FMR + median-income enrichment
 - **Anthropic** — AI search / brief / lead score / outreach (rules-based NL fallback without it)

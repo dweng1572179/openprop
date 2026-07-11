@@ -1,7 +1,7 @@
 """Contact-mapping + model-coercion checks for the fixes from the provider
 review. No network. Run: python -m tests.test_providers"""
 from app.models import PropertyRecord
-from app.providers.reapi import ReapiSkipTrace
+from app.providers.reapi import ReapiProvider, ReapiSkipTrace
 from app.providers.skiptrace import GenericSkipTrace
 
 _BATCHDATA_PERSON = {
@@ -62,6 +62,59 @@ def test_reapi_mapping():
     print("reapi mapping OK")
 
 
+# A REAPI PropertySearch row is FLAT — trimmed from a live zip-90007 response.
+# PropertyDetail nests the same data under propertyInfo/ownerInfo/taxInfo instead,
+# and reading only those blocks silently blanked every search row.
+_REAPI_SEARCH_ROW = {
+    "address": {"address": "1183 W 24th St", "city": "Los Angeles", "state": "CA", "zip": "90007"},
+    "apn": "5054-024-002",
+    "companyName": "Bellamar Llc",
+    "corporateOwned": True,
+    "absenteeOwner": True,
+    "assessedValue": 349965,
+    "estimatedValue": 1578000,
+    "estimatedEquity": 1578000,
+    "equity": False,           # BOOLEAN filter bit — never the dollar amount
+    "equityPercent": 100,
+    "openMortgageBalance": 0,
+    "squareFeet": 2100,        # NOT livingSquareFeet
+    "lastSaleAmount": "5000000",
+    "yearBuilt": 1923,
+    "vacant": False,
+    "preForeclosure": False,
+}
+
+
+def test_reapi_search_row_is_flat():
+    rec = ReapiProvider.__new__(ReapiProvider)._to_record(_REAPI_SEARCH_ROW)
+    assert rec.owner_name == "Bellamar Llc", rec.owner_name
+    assert rec.assessed_value == 349965 and rec.market_value == 1578000
+    assert rec.building_sqft == 2100 and rec.year_built == 1923
+    assert rec.apn == "5054-024-002" and rec.corporate_owned is True
+    # the $0-equity bug: `equity` is False here, so reading it as the amount gave 0
+    assert rec.est_equity == 1578000, rec.est_equity
+    assert rec.equity_pct == 100
+    assert rec.last_sale_price == 5000000, rec.last_sale_price
+    print("reapi flat search-row mapping OK")
+
+
+def test_reapi_nested_detail_still_maps():
+    """The PropertyDetail shape must keep working — the flat fallbacks are additive."""
+    detail = {
+        "propertyInfo": {"address": {"label": "9 Elm St", "city": "Dallas", "state": "TX", "zip": "75001"},
+                         "yearBuilt": 1998, "bedrooms": 3, "livingSquareFeet": 1800},
+        "ownerInfo": {"owner1FullName": "Jane Q Public", "corporateOwned": False},
+        "taxInfo": {"assessedValue": 250000},
+        "estimatedValue": 400000, "estimatedEquity": 150000, "equityPercent": 37.5,
+    }
+    rec = ReapiProvider.__new__(ReapiProvider)._to_record(detail)
+    assert rec.owner_name == "Jane Q Public" and rec.address == "9 Elm St"
+    assert rec.year_built == 1998 and rec.beds == 3 and rec.building_sqft == 1800
+    assert rec.assessed_value == 250000 and rec.est_equity == 150000
+    assert rec.equity_pct == 38, rec.equity_pct  # rounded
+    print("reapi nested detail mapping OK")
+
+
 def test_float_to_int_coercion():
     # Regrid GIS sqft arrives fractional; PropertyRecord must not choke
     r = PropertyRecord(address="1 X", lot_sqft=1234.7, market_value=399999.4)
@@ -73,5 +126,7 @@ if __name__ == "__main__":
     test_batchdata_mapping()
     test_apify_mapping()
     test_reapi_mapping()
+    test_reapi_search_row_is_flat()
+    test_reapi_nested_detail_still_maps()
     test_float_to_int_coercion()
     print("providers test OK")
