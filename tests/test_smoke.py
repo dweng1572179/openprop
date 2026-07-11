@@ -97,6 +97,24 @@ def test_smoke():
         print("  settings paste-key applies live OK")
 
 
+
+def test_search_requires_a_location():
+    """A filterless search must be REFUSED, not answered. REAPI happily returns a
+    random nationwide slice for an empty query (Wisconsin farmland, TX pipelines),
+    which renders as 100 real-looking rows of pure noise — this is what an address
+    typed into the AI box used to produce."""
+    from app import services
+    from app.models import SearchFilters
+    for f in (SearchFilters(), SearchFilters(equity_pct_min=60, vacant=True),
+              SearchFilters(beds_min=3, value_max=400_000)):
+        try:
+            services.search(f)
+            raise AssertionError(f"filterless search was ANSWERED, not refused: {f}")
+        except ValueError as e:
+            assert "location" in str(e).lower(), e
+    print("  search refuses a locationless query OK")
+
 if __name__ == "__main__":
     test_smoke()
+    test_search_requires_a_location()
     print("smoke OK")

@@ -34,7 +34,13 @@ def lookup(address: str) -> PropertyRecord | None:
         raise RuntimeError("no geocoder configured (set GEOCODER=census)")
     g = geo.geocode(address)
     if not g:
-        return None
+        # A bare street ("1133 west 36th place") does not geocode — there are
+        # thousands of them. Say WHY, instead of rendering the same "no property
+        # matched" as a real not-found and leaving the user to guess.
+        raise ValueError(
+            f"Couldn't locate {address!r}. Include the city and state or a ZIP "
+            "— e.g. '1133 W 36th Pl, Los Angeles, CA 90007'."
+        )
 
     rec: dict = {
         "address": g.get("matched_address") or address,
@@ -91,6 +97,12 @@ def search(f: SearchFilters) -> list[PropertyRecord]:
     pp = registry.property_provider()
     if pp is None:
         raise RuntimeError("no property provider configured (set PROPERTY_PROVIDER + key)")
+    # A search with no location is not a search — REAPI happily answers it with a
+    # random nationwide slice (Wisconsin farmland, Texas pipelines), which looks like
+    # 100 real results and is 100 pieces of noise. RentCast's provider guarded this;
+    # REAPI's did not. Guard it HERE so it holds for every provider.
+    if not (f.zip or f.city or f.county or f.state):
+        raise ValueError("Add a location — ZIP, city, county, or state — before searching.")
     coarse = pp.search(f)
     enriched: list[PropertyRecord] = []
     for rec in coarse:

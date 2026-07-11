@@ -12,6 +12,16 @@ from .routes_search import _geojson  # escaped GeoJSON builder (shared)
 def ai_parse(request: Request, query: str = Form(...), _=Depends(require_auth)):
     f = ai.nl_to_filters(query.strip())
     interpreted = {k: v for k, v in f.model_dump().items() if v is not None and k != "limit"}
+    if not interpreted:
+        # Nothing extracted — usually a street address typed into the AI box. Running
+        # the search anyway returned a random nationwide slice that LOOKED like results.
+        return templates.TemplateResponse("_error.html", {
+            "request": request,
+            "msg": (f"Couldn't turn {query.strip()!r} into search filters. If that's a "
+                    "single address, use Single lookup instead. For a list, describe what "
+                    "you want — e.g. 'vacant absentee homes in San Antonio TX with 60%+ "
+                    "equity under $400k'."),
+        })
     try:
         results = services.search(f)
     except Exception as e:  # noqa: BLE001
