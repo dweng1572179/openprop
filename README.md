@@ -67,6 +67,13 @@ Each test module sets its own env (temp DB, blank keys) at import, so run them
 `pytest tests` run imports every module first, and the first one to import wins
 the config singleton, so the others get a DB and a password they didn't ask for.
 
+## Sibling project
+
+**[OpenLease](https://github.com/dweng1572179/openlease)** — the open, self-hosted
+SpaceFinder: an AI-native commercial-real-estate leasing search over four metros (New
+York, Miami, Los Angeles, Chicago). Same author, same architecture, adjacent domain —
+runs keyless-first on port **8788**, so it and OpenProp (8787) can run side by side.
+
 ## Layout
 
 ```
